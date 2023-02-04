@@ -1,0 +1,41 @@
+/* we want to find the top genre for each country excluding rock
+ * to market in a less competitive yet profitable genre
+ * find top genre for each country excluding Rock */ 
+
+WITH t1 AS
+  (SELECT i.InvoiceId invoice,
+          i.BillingCountry,
+          t.name track,
+          g.name Genre,
+          il.UnitPrice,
+          il.Quantity
+   FROM invoice i
+   JOIN invoiceline il ON i.invoiceid = il.invoiceid
+   JOIN Track t ON t.TrackId = il.TrackId
+   JOIN Album a ON a.AlbumId = t.AlbumId
+   JOIN Genre g ON t.GenreId = g.GenreId
+   WHERE Genre not in ('Rock') ),
+                                                          
+t2 AS
+  (SELECT Genre,
+          BillingCountry,
+          sum(unitprice) track_earning,
+          count(*) count_
+   FROM t1
+   GROUP BY genre,
+            BillingCountry),
+                                                          
+t3 AS
+  (SELECT BillingCountry,
+          max(t2.track_earning) max_usd_genre_country
+   FROM t2
+   GROUP BY billingcountry)
+SELECT t2.BillingCountry,
+       t2.Genre,
+       t2.track_earning,
+       t2.count_
+FROM t2
+JOIN t3 ON t2.track_earning = t3.max_usd_genre_country
+AND t2. BillingCountry = t3.BillingCountry
+ORDER BY 3 DESC,
+         1;

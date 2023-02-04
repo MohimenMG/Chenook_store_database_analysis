@@ -1,0 +1,33 @@
+/* find the sales of above avarage genres on monthly basis*/ 
+
+WITH t1 AS
+  (SELECT g.Name Genre,
+          sum(i.Total) genre_reveue
+   FROM Invoice i
+   JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId
+   JOIN Track t ON t.TrackId = il.TrackId
+   JOIN Genre g ON g.GenreId = t.GenreId
+   GROUP BY 1),
+                                                                  
+t2 AS
+  (SELECT Genre,
+          genre_reveue
+   FROM t1
+   WHERE genre_reveue >
+       (SELECT avg(genre_reveue)
+        FROM t1) )
+
+SELECT STRFTIME('%Y-%m', i.InvoiceDate) month_of_year,
+       g.Name Genre,
+       sum(i.Total) Genre_revenue
+FROM Invoice i
+JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId
+JOIN Track t ON t.TrackId = il.TrackId
+JOIN Genre g ON g.GenreId = t.GenreId
+WHERE Genre IN
+    (SELECT Genre
+     FROM t2)
+GROUP BY 1,
+         2
+ORDER BY 1,
+         2 DESC

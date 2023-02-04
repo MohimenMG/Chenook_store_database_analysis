@@ -1,0 +1,33 @@
+/* intro: since rock dominate the music industry we want to find less competetive genres
+ * with potenial for high sales
+ * find all genres excluding rock with above avarage total earnings and
+ * bin the below avarage genres into one group*/ 
+
+WITH t1 AS
+  (SELECT g.name Genre,
+          sum(il.UnitPrice) total_genre_revenue
+   FROM customer c
+   JOIN invoice i ON i.customerid = c.customerid
+   JOIN invoiceline il ON i.invoiceid = il.invoiceid
+   JOIN Track t ON t.TrackId = il.TrackId
+   JOIN Album a ON a.AlbumId = t.AlbumId
+   JOIN Artist a2 ON a2.ArtistId = a.ArtistId
+   JOIN Genre g ON t.GenreId = g.GenreId
+   WHERE Genre != 'Rock'
+   GROUP BY Genre
+   ORDER BY total_genre_revenue DESC),
+                                                      
+t2 AS
+  (SELECT avg(total_genre_revenue) avarage_revenue
+   FROM t1)
+SELECT CASE
+           WHEN total_genre_revenue >
+                  (SELECT avarage_revenue
+                   FROM t2) THEN genre
+           ELSE 'Others'
+       END AS above_avg_genres,
+       sum(total_genre_revenue) total_genre_income,
+       count(*)
+FROM t1
+GROUP BY above_avg_genres
+ORDER BY 2 DESC;

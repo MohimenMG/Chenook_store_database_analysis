@@ -1,0 +1,37 @@
+/* find the top artist for each country */ 
+
+WITH t1 AS
+  (SELECT i.InvoiceId invoice,
+          i.BillingCountry,
+          t.name track,
+          il.UnitPrice,
+          il.Quantity,
+          a2.name artist_name
+   FROM invoice i
+   JOIN invoiceline il ON i.invoiceid = il.invoiceid
+   JOIN Track t ON t.TrackId = il.TrackId
+   JOIN Album a ON a.AlbumId = t.AlbumId
+   JOIN Artist a2 ON a2.ArtistId = a.ArtistId),
+                                               
+t2 AS
+  (SELECT billingCountry,
+          artist_name,
+          sum(UnitPrice) artist_total_usd,
+          count(*) count_
+   FROM t1
+   GROUP BY 1,
+            2),
+                                               
+t3 AS
+  (SELECT billingCountry,
+          max(artist_total_usd) top_artist_usd
+   FROM t2
+   GROUP BY billingcountry)
+SELECT t2.billingCountry,
+       t2.artist_name,
+       t2.artist_total_usd,
+       t2.count_
+FROM t2
+JOIN t3 ON t2.billingCountry = t3.billingCountry
+AND t2.artist_total_usd = t3.top_artist_usd
+ORDER BY 3 DESC;
